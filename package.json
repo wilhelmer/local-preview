@@ -1,0 +1,140 @@
+{
+  "name": "local-preview",
+  "displayName": "Local Preview",
+  "description": "Preview local web files in VS Code, without manually typing the local server URL into a browser.",
+  "version": "0.1.0",
+  "publisher": "wilhelmer",
+  "author": "Lars Wilhelmer",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "homepage": "https://github.com/wilhelmer/local-preview#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wilhelmer/local-preview.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wilhelmer/local-preview/issues"
+  },
+  "keywords": [
+    "localhost",
+    "apache",
+    "xampp",
+    "mamp",
+    "live-reload",
+    "preview"
+  ],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "localPreview.open",
+        "title": "Local Preview: Open Active File",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "localPreview.openSplit",
+        "title": "Local Preview: Open in Split Pane",
+        "icon": {
+          "light": "media/split-globe-light.svg",
+          "dark": "media/split-globe-dark.svg"
+        }
+      },
+      {
+        "command": "localPreview.addRoot",
+        "title": "Local Preview: Add Document Root",
+        "icon": "$(add)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "localPreview.openSplit",
+        "key": "ctrl+alt+l",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "localPreview.open",
+        "key": "ctrl+alt+o",
+        "when": "editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "localPreview.openSplit",
+          "group": "navigation",
+          "when": "resourceSet"
+        },
+        {
+          "command": "localPreview.open",
+          "group": "navigation",
+          "when": "resourceSet"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "localPreview.open",
+          "group": "navigation@1",
+          "when": "resourceScheme == 'file'"
+        },
+        {
+          "command": "localPreview.openSplit",
+          "group": "navigation@2",
+          "when": "resourceScheme == 'file'"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Local Preview",
+      "properties": {
+        "localPreview.roots": {
+          "type": "array",
+          "default": [],
+          "description": "Mappings of { pattern, url }. pattern is a regex tested against the workspace-relative path, then the absolute path (forward slashes); the first match wins. url may use capture groups like $1."
+        },
+        "localPreview.server.command": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Command that starts your dev server (e.g. \"yarn run start\"). Runs silently in the background when a new preview opens and server.port is not in use. User settings only."
+        },
+        "localPreview.server.port": {
+          "type": "number",
+          "default": 0,
+          "scope": "machine",
+          "description": "Port the dev server listens on. If nothing listens there when a preview opens, server.command is run. 0 disables."
+        },
+        "localPreview.followMode": {
+          "type": "boolean",
+          "default": true,
+          "description": "Follow mode: when enabled, switching editor tabs loads the newly active file's URL in the open split preview."
+        },
+        "localPreview.previewWidth": {
+          "type": "number",
+          "default": 30,
+          "minimum": 0,
+          "maximum": 99,
+          "description": "Width of the split preview in percent of the editor area when it opens. Applied only when two editor groups exist. 0 disables."
+        },
+        "localPreview.browser": {
+          "type": "string",
+          "enum": [
+            "system",
+            "simple"
+          ],
+          "default": "system",
+          "description": "Open in the system browser or VS Code Simple Browser."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package"
+  }
+}
