@@ -31,6 +31,12 @@
   ],
   "activationEvents": [],
   "main": "./extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "restrictedConfigurations": ["localPreview.roots"]
+    }
+  },
   "contributes": {
     "commands": [
       {

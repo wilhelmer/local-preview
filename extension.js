@@ -81,7 +81,13 @@ function portInUse(port) {
 }
 
 // starts the configured server in the background unless the port is already taken, then waits for it
-async function ensureServer() {
+let serverStarting = null;
+// concurrent callers share one start, so a second call cannot spawn a second server
+function ensureServer() {
+  return serverStarting || (serverStarting = startServer().finally(() => { serverStarting = null; }));
+}
+
+async function startServer() {
   const cfg = vscode.workspace.getConfiguration('localPreview');
   const command = (cfg.get('server.command', '') || '').trim();
   const port = cfg.get('server.port', 0);
@@ -113,7 +119,14 @@ async function applyPreviewWidth() {
   });
 }
 
-async function openSplit(url) {
+let splitQueue = Promise.resolve();
+// runs one at a time so quick tab switches navigate the same tab instead of opening a second one
+function openSplit(url) {
+  splitQueue = splitQueue.then(() => doOpenSplit(url)).catch(() => {});
+  return splitQueue;
+}
+
+async function doOpenSplit(url) {
   if (!isSafeHttpUrl(url)) return;
   const isNew = !lastSplitUrl; // no preview open yet
   if (isNew) await ensureServer();
