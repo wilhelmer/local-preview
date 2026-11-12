@@ -22,7 +22,10 @@ function fileToUrl(fsPath) {
     let re;
     try { re = new RegExp(r.pattern); } catch { continue; }
     for (const c of candidates) {
-      if (re.test(c)) return encodeURI(c.replace(re, r.url.trim()));
+      if (!re.test(c)) continue;
+      // replace() keeps the unmatched rest of the path; an unanchored pattern then yields "/abs/path/http://...", so skip it
+      const out = c.replace(re, r.url.trim());
+      if (isSafeHttpUrl(out)) return encodeURI(out);
     }
   }
   return null;
