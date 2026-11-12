@@ -108,7 +108,7 @@
           "type": "string",
           "default": "",
           "scope": "machine",
-          "description": "Command that starts your dev server (e.g. \"yarn run start\"). Runs silently in the background when a new preview opens and server.port is not in use. User settings only."
+          "description": "Command that starts your dev server (e.g. \"yarn run start\"). Runs in the background when a new preview opens and server.port is not in use. Stops when the split preview closes. User settings only."
         },
         "localPreview.server.port": {
           "type": "number",

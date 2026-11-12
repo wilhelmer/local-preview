@@ -121,9 +121,17 @@ async function applyPreviewWidth() {
 
 let splitQueue = Promise.resolve();
 // runs one at a time so quick tab switches navigate the same tab instead of opening a second one
+let opening = 0; // tab events during an open must not look like a closed preview
 function openSplit(url) {
-  splitQueue = splitQueue.then(() => doOpenSplit(url)).catch(() => {});
+  opening++;
+  splitQueue = splitQueue.then(() => doOpenSplit(url)).catch(() => {}).finally(() => { opening--; });
   return splitQueue;
+}
+
+// the split pane is gone: forget it and stop the server we started for it
+function previewClosed() {
+  lastSplitUrl = null;
+  stopServer();
 }
 
 async function doOpenSplit(url) {
@@ -164,9 +172,7 @@ async function doOpenSplit(url) {
 function trackSave(context) {
   if (vscode.window.tabGroups && vscode.window.tabGroups.onDidChangeTabs) {
     vscode.window.tabGroups.onDidChangeTabs(() => {
-      if (!isBrowserPreviewOpen()) {
-        lastSplitUrl = null;
-      }
+      if (lastSplitUrl && !opening && !isBrowserPreviewOpen()) previewClosed();
     }, null, context.subscriptions);
   }
 
@@ -183,8 +189,8 @@ function trackSave(context) {
     if (doc.uri.scheme !== 'file') return;
     const savedUrl = fileToUrl(doc.uri.fsPath);
     if (!savedUrl) return;
-    if (!isBrowserPreviewOpen()) {
-      lastSplitUrl = null;
+    if (!opening && !isBrowserPreviewOpen()) {
+      previewClosed();
       return;
     }
     // saving any mapped file reloads every open preview
@@ -267,10 +273,15 @@ function activate(context) {
   );
 }
 
-function deactivate() {
+function stopServer() {
   if (!serverProc) return;
   // shortcut: on Windows only the shell is killed, not its children; use taskkill /T if that leaks
   try { process.platform === 'win32' ? serverProc.kill() : process.kill(-serverProc.pid); } catch {}
+  serverProc = null;
+}
+
+function deactivate() {
+  stopServer();
 }
 
 module.exports = { activate, deactivate };

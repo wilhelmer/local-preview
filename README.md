@@ -7,7 +7,7 @@ Preview local web files in VS Code, without manually typing the local server URL
 - Maps a file in your workspace to its local server URL (XAMPP, MAMP, Apache, Nginx, dev servers).
 - Opens it in a live split pane next to your editor, or in your browser.
 - Follow mode: switching editor tabs loads the active file in the open preview.
-- Optionally starts your dev server automatically when a preview opens.
+- Optionally starts your dev server automatically when a preview opens, and stops it when you close the split pane.
 
 | Command                                     | Shortcut     |
 | ------------------------------------------- | ------------ |
