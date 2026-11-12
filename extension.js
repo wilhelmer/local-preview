@@ -148,7 +148,7 @@ async function doOpenSplit(url) {
       await vscode.commands.executeCommand('workbench.action.browser.open', {
         url,
         openToSide: true,
-        reuseUrlFilter: prevUrl
+        reuseUrlFilter: originOf(prevUrl)
       });
     }
     if (isNew) await applyPreviewWidth();
@@ -167,6 +167,12 @@ async function doOpenSplit(url) {
     preserveFocus: true
   });
   if (isNew) await applyPreviewWidth();
+}
+
+// origin plus any path, so the open tab is reused even after in-page navigation changed its path.
+// VS Code parses a bare origin to path "/" and glob-matches it against the tab's path, so "/**" is needed.
+function originOf(url) {
+  try { return `${new URL(url).origin}/**`; } catch { return url; }
 }
 
 function trackSave(context) {
