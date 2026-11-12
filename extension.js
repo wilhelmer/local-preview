@@ -33,12 +33,12 @@ function fileToUrl(fsPath) {
 
 async function openUrl(url) {
   if (!isSafeHttpUrl(url)) return;
-  await ensureServer();
   const mode = vscode.workspace.getConfiguration('localPreview').get('browser', 'system');
   if (mode === 'simple') {
-    await openSplit(url);
+    await openSplit(url); // starts the server itself
     return;
   }
+  await ensureServer();
   await vscode.env.openExternal(vscode.Uri.parse(url));
 }
 
@@ -215,7 +215,10 @@ async function promptAddRoot() {
   const url = rawUrl.trim();
 
   const config = vscode.workspace.getConfiguration('localPreview');
-  const existing = config.get('roots', []);
+  // a workspace array overrides the user one, so write where the effective value lives
+  const info = config.inspect('roots');
+  const inWorkspace = Array.isArray(info && info.workspaceValue);
+  const existing = (inWorkspace ? info.workspaceValue : info && info.globalValue) || [];
   const safeExisting = Array.isArray(existing)
     ? existing.filter(r => r && typeof r.pattern === 'string' && typeof r.url === 'string')
     : [];
@@ -223,7 +226,7 @@ async function promptAddRoot() {
   const updated = safeExisting.filter(r => r.pattern !== pattern);
   updated.push({ pattern, url });
 
-  await config.update('roots', updated, vscode.ConfigurationTarget.Global);
+  await config.update('roots', updated, inWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global);
   vscode.window.showInformationMessage(`Added localhost root: ${pattern} -> ${url}`);
 }
 
@@ -245,7 +248,7 @@ function activate(context) {
     await promptAddRoot();
   }));
 
-  context.subscriptions.push(vscode.commands.registerCommand('localPreview.open', async () => {
+  const openActiveFile = (open) => async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.uri.scheme !== 'file') {
       vscode.window.showWarningMessage('No active file to open.');
@@ -256,22 +259,12 @@ function activate(context) {
       await warnNoRoot();
       return;
     }
-    openUrl(url);
-  }));
-
-  context.subscriptions.push(vscode.commands.registerCommand('localPreview.openSplit', async () => {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.uri.scheme !== 'file') {
-      vscode.window.showWarningMessage('No active file to open.');
-      return;
-    }
-    const url = fileToUrl(editor.document.uri.fsPath);
-    if (!url) {
-      await warnNoRoot();
-      return;
-    }
-    openSplit(url);
-  }));
+    open(url);
+  };
+  context.subscriptions.push(
+    vscode.commands.registerCommand('localPreview.open', openActiveFile(openUrl)),
+    vscode.commands.registerCommand('localPreview.openSplit', openActiveFile(openSplit))
+  );
 }
 
 function deactivate() {
@@ -280,4 +273,4 @@ function deactivate() {
   try { process.platform === 'win32' ? serverProc.kill() : process.kill(-serverProc.pid); } catch {}
 }
 
-module.exports = { activate, deactivate, fileToUrl, isBrowserPreviewOpen };
+module.exports = { activate, deactivate };
