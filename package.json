@@ -1,8 +1,8 @@
 {
   "name": "local-preview",
   "displayName": "Local Preview",
-  "description": "Preview local web files in VS Code, without manually typing the local server URL into a browser.",
-  "version": "0.3.0",
+  "description": "Preview your static site locally, right within VS Code. Run a static site generator like Docusaurus, Hugo, or Jekyll under the hood and see the generated page in a live split pane while you browse and edit the source.",
+  "version": "0.4.0",
   "publisher": "LWilhelmer",
   "author": "Lars Wilhelmer",
   "license": "MIT",
@@ -17,10 +17,10 @@
   },
   "keywords": [
     "localhost",
-    "apache",
-    "xampp",
-    "mamp",
-    "live-reload",
+    "static",
+    "site",
+    "generator",
+    "live",
     "preview"
   ],
   "engines": {
@@ -34,14 +34,14 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "restrictedConfigurations": ["localPreview.roots"]
+      "restrictedConfigurations": ["localPreview.mappings", "localPreview.server.command", "localPreview.server.port"]
     }
   },
   "contributes": {
     "commands": [
       {
         "command": "localPreview.open",
-        "title": "Local Preview: Open Active File",
+        "title": "Local Preview: Open in Browser",
         "icon": "$(globe)"
       },
       {
@@ -53,8 +53,8 @@
         }
       },
       {
-        "command": "localPreview.addRoot",
-        "title": "Local Preview: Add Document Root",
+        "command": "localPreview.addMapping",
+        "title": "Local Preview: Add Mapping",
         "icon": "$(add)"
       }
     ],
@@ -82,65 +82,42 @@
           "group": "navigation",
           "when": "resourceSet"
         }
-      ],
-      "editor/context": [
-        {
-          "command": "localPreview.open",
-          "group": "navigation@1",
-          "when": "resourceScheme == 'file'"
-        },
-        {
-          "command": "localPreview.openSplit",
-          "group": "navigation@2",
-          "when": "resourceScheme == 'file'"
-        }
       ]
     },
     "configuration": {
       "title": "Local Preview",
       "properties": {
-        "localPreview.roots": {
+        "localPreview.mappings": {
           "type": "array",
           "default": [],
-          "description": "Mappings of { pattern, url }. pattern is a regex tested against the workspace-relative path, then the absolute path (forward slashes); the first match wins. url may use capture groups like $1."
+          "description": "Mappings of { pattern, url }. Pattern is a regex tested against the workspace-relative path, then the absolute path, first match wins. Url may use capture groups like $1."
         },
         "localPreview.server.command": {
           "type": "string",
           "default": "",
-          "scope": "machine",
-          "description": "Command that starts your dev server (e.g. \"yarn run start\"). Runs in the background when a new preview opens and server.port is not in use. Stops when the split preview closes. User settings only."
+          "description": "Command that starts your server (e.g. \"yarn run start\"). Runs in the background when a new preview opens and server.port is not in use. Stops when the split preview closes. Ignored in untrusted workspaces."
         },
         "localPreview.server.port": {
           "type": "number",
           "default": 0,
-          "scope": "machine",
-          "description": "Port the dev server listens on. If nothing listens there when a preview opens, server.command is run. 0 disables."
+          "description": "Port the server listens on. If nothing listens there when a preview opens, server.command is run. 0 disables."
         },
         "localPreview.followMode": {
           "type": "boolean",
           "default": true,
-          "description": "Follow mode: when enabled, switching editor tabs loads the newly active file's URL in the open split preview."
+          "description": "When enabled, switching editor tabs opens the newly active file in the open split preview."
         },
         "localPreview.followHeadings": {
           "type": "boolean",
           "default": true,
-          "description": "Follow Markdown headings: when enabled, moving the cursor onto a Markdown heading scrolls the open split preview to that heading's anchor (file.html#my-heading)."
+          "description": "When enabled, moving the cursor onto a Markdown heading scrolls the open split preview to that heading's anchor (file.html#my-heading)."
         },
         "localPreview.previewWidth": {
           "type": "number",
           "default": 30,
           "minimum": 0,
           "maximum": 99,
-          "description": "Width of the split preview in percent of the editor area when it opens. Applied only when two editor groups exist. 0 disables."
-        },
-        "localPreview.browser": {
-          "type": "string",
-          "enum": [
-            "system",
-            "simple"
-          ],
-          "default": "system",
-          "description": "Open in the system browser or VS Code Simple Browser."
+          "description": "Width of the split preview in percent of the editor area when it opens. Applied only when two editor groups exist. 0 keeps VS Code's default split width."
         }
       }
     }

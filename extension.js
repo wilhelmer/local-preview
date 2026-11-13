@@ -12,12 +12,12 @@ function isSafeHttpUrl(url) {
 
 function fileToUrl(fsPath) {
   if (!fsPath || typeof fsPath !== 'string') return null;
-  const roots = vscode.workspace.getConfiguration('localPreview').get('roots', []);
-  if (!Array.isArray(roots)) return null;
+  const mappings = vscode.workspace.getConfiguration('localPreview').get('mappings', []);
+  if (!Array.isArray(mappings)) return null;
   const norm = fsPath.replace(/\\/g, '/');
   // pattern is tried against the workspace-relative path, then the absolute path; first match wins
   const candidates = [vscode.workspace.asRelativePath(fsPath, false).replace(/\\/g, '/'), norm];
-  for (const r of roots) {
+  for (const r of mappings) {
     if (!r || typeof r.pattern !== 'string' || !isSafeHttpUrl(r.url)) continue;
     let re;
     try { re = new RegExp(r.pattern); } catch { continue; }
@@ -33,11 +33,6 @@ function fileToUrl(fsPath) {
 
 async function openUrl(url) {
   if (!isSafeHttpUrl(url)) return;
-  const mode = vscode.workspace.getConfiguration('localPreview').get('browser', 'system');
-  if (mode === 'simple') {
-    await openSplit(url); // starts the server itself
-    return;
-  }
   await ensureServer();
   await vscode.env.openExternal(vscode.Uri.parse(url));
 }
@@ -258,9 +253,9 @@ function trackSave(context) {
   }, null, context.subscriptions);
 }
 
-async function promptAddRoot() {
+async function promptAddMapping() {
   const pattern = await vscode.window.showInputBox({
-    title: 'Root Pattern (1/2)',
+    title: 'Mapping Pattern (1/2)',
     prompt: 'Regex tested against the workspace-relative path, then the absolute path (e.g. ^docs/(.*)\\.md$)',
     ignoreFocusOut: true,
     validateInput: (val) => {
@@ -272,7 +267,7 @@ async function promptAddRoot() {
   if (!pattern) return;
 
   const rawUrl = await vscode.window.showInputBox({
-    title: 'Root URL (2/2)',
+    title: 'Mapping URL (2/2)',
     prompt: 'URL for matching files; use $1, $2, ... for capture groups (e.g. http://localhost:3000/docs/$1)',
     ignoreFocusOut: true,
     validateInput: (val) => isSafeHttpUrl(val) ? null : 'URL must start with http:// or https://'
@@ -282,7 +277,7 @@ async function promptAddRoot() {
 
   const config = vscode.workspace.getConfiguration('localPreview');
   // a workspace array overrides the user one, so write where the effective value lives
-  const info = config.inspect('roots');
+  const info = config.inspect('mappings');
   const inWorkspace = Array.isArray(info && info.workspaceValue);
   const existing = (inWorkspace ? info.workspaceValue : info && info.globalValue) || [];
   const safeExisting = Array.isArray(existing)
@@ -292,17 +287,17 @@ async function promptAddRoot() {
   const updated = safeExisting.filter(r => r.pattern !== pattern);
   updated.push({ pattern, url });
 
-  await config.update('roots', updated, inWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global);
-  vscode.window.showInformationMessage(`Added localhost root: ${pattern} -> ${url}`);
+  await config.update('mappings', updated, inWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global);
+  vscode.window.showInformationMessage(`Added mapping: ${pattern} -> ${url}`);
 }
 
-async function warnNoRoot() {
+async function warnNoMapping() {
   const choice = await vscode.window.showWarningMessage(
     'No preview rule matches this file.',
     'Add rule...'
   );
   if (choice === 'Add rule...') {
-    await promptAddRoot();
+    await promptAddMapping();
   }
 }
 
@@ -310,8 +305,8 @@ async function warnNoRoot() {
 function activate(context) {
   trackSave(context);
 
-  context.subscriptions.push(vscode.commands.registerCommand('localPreview.addRoot', async () => {
-    await promptAddRoot();
+  context.subscriptions.push(vscode.commands.registerCommand('localPreview.addMapping', async () => {
+    await promptAddMapping();
   }));
 
   const openActiveFile = (open) => async () => {
@@ -322,7 +317,7 @@ function activate(context) {
     }
     const url = fileToUrl(editor.document.uri.fsPath);
     if (!url) {
-      await warnNoRoot();
+      await warnNoMapping();
       return;
     }
     lastEditor = editor;
