@@ -45,6 +45,8 @@ async function openUrl(url) {
 // --- split-pane live preview ---
 
 let lastSplitUrl = null;
+let keepFocus = null;
+let lastEditor = null; // editor to give focus back to; queued opens start while the browser holds focus
 let hasIntegratedBrowserCmd = null;
 
 async function supportsIntegratedBrowser() {
@@ -131,6 +133,7 @@ function openSplit(url) {
 // the split pane is gone: forget it and stop the server we started for it
 function previewClosed() {
   lastSplitUrl = null;
+  keepFocus = null;
   stopServer();
 }
 
@@ -138,7 +141,8 @@ async function doOpenSplit(url) {
   if (!isSafeHttpUrl(url)) return;
   const isNew = !lastSplitUrl; // no preview open yet
   if (isNew) await ensureServer();
-  const prevEditor = vscode.window.activeTextEditor;
+  // with arrow keys the next open starts while the browser has focus, so activeTextEditor is undefined
+  const prevEditor = lastEditor = vscode.window.activeTextEditor || lastEditor;
   // the filter must match the tab that is already open (the previous URL), so it gets navigated instead of a new tab opening
   const prevUrl = lastSplitUrl || url;
   lastSplitUrl = url;
@@ -155,12 +159,15 @@ async function doOpenSplit(url) {
     // only the #anchor changed: the browser scrolls in place, so a reload would just be disruptive
     const hashOnly = !isNew && url !== prevUrl && url.split('#')[0] === prevUrl.split('#')[0];
     if (!hashOnly) await vscode.commands.executeCommand('workbench.action.browser.hardReload');
+    const refocus = () => vscode.window.showTextDocument(prevEditor.document, {
+      viewColumn: prevEditor.viewColumn,
+      preserveFocus: false,
+      selection: prevEditor.selection
+    });
     if (prevEditor && !prevEditor.document.isClosed) {
-      await vscode.window.showTextDocument(prevEditor.document, {
-        viewColumn: prevEditor.viewColumn,
-        preserveFocus: false,
-        selection: prevEditor.selection
-      });
+      // the browser can grab focus shortly after its command resolves; for 5s, take it back whenever the editor loses it
+      keepFocus = { refocus, document: prevEditor.document, until: Date.now() + 5000 };
+      await refocus();
     }
     return;
   }
@@ -186,6 +193,12 @@ function trackSave(context) {
 
   // switching editor tabs loads that file's URL in the open preview
   vscode.window.onDidChangeActiveTextEditor((editor) => {
+    // no active text editor means the preview took focus; right after a jump that is unwanted
+    if (!editor && keepFocus && Date.now() < keepFocus.until) {
+      // a closed document means the user closed it on purpose: do not reopen it
+      if (!keepFocus.document.isClosed) keepFocus.refocus().then(undefined, () => {});
+      return;
+    }
     if (!lastSplitUrl || !editor || editor.document.uri.scheme !== 'file') return;
     if (!vscode.workspace.getConfiguration('localPreview').get('followMode', true)) return;
     const url = fileToUrl(editor.document.uri.fsPath);
