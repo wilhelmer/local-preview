@@ -152,7 +152,9 @@ async function doOpenSplit(url) {
       });
     }
     if (isNew) await applyPreviewWidth();
-    await vscode.commands.executeCommand('workbench.action.browser.hardReload');
+    // only the #anchor changed: the browser scrolls in place, so a reload would just be disruptive
+    const hashOnly = !isNew && url !== prevUrl && url.split('#')[0] === prevUrl.split('#')[0];
+    if (!hashOnly) await vscode.commands.executeCommand('workbench.action.browser.hardReload');
     if (prevEditor && !prevEditor.document.isClosed) {
       await vscode.window.showTextDocument(prevEditor.document, {
         viewColumn: prevEditor.viewColumn,
@@ -187,7 +189,24 @@ function trackSave(context) {
     if (!lastSplitUrl || !editor || editor.document.uri.scheme !== 'file') return;
     if (!vscode.workspace.getConfiguration('localPreview').get('followMode', true)) return;
     const url = fileToUrl(editor.document.uri.fsPath);
-    if (url && url !== lastSplitUrl) openSplit(url);
+    // ignore the #anchor, else refocusing the same file navigates to the bare URL and reloads without the fragment
+    if (url && url !== lastSplitUrl.split('#')[0]) openSplit(url);
+  }, null, context.subscriptions);
+
+  // moving the cursor onto a Markdown heading scrolls the preview to its anchor
+  vscode.window.onDidChangeTextEditorSelection((e) => {
+    const doc = e.textEditor.document;
+    if (!lastSplitUrl || opening || doc.languageId !== 'markdown' || doc.uri.scheme !== 'file') return;
+    if (!vscode.workspace.getConfiguration('localPreview').get('followHeadings', true)) return;
+    const m = /^ {0,3}#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(doc.lineAt(e.selections[0].active.line).text);
+    if (!m) return;
+    // shortcut: GitHub-style slug (no duplicate-heading "-1" suffixes); adjust if your renderer slugs differently
+    const slug = m[1].toLowerCase().replace(/[^\p{L}\p{N}_ -]/gu, '').replace(/ /g, '-');
+    const base = fileToUrl(doc.uri.fsPath);
+    // only scroll the file being previewed; other files are left to followMode
+    if (!slug || !base || base !== lastSplitUrl.split('#')[0]) return;
+    const url = `${base}#${encodeURIComponent(slug)}`;
+    if (url !== lastSplitUrl) openSplit(url);
   }, null, context.subscriptions);
 
   vscode.workspace.onDidSaveTextDocument((doc) => {

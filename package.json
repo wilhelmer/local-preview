@@ -2,8 +2,8 @@
   "name": "local-preview",
   "displayName": "Local Preview",
   "description": "Preview local web files in VS Code, without manually typing the local server URL into a browser.",
-  "version": "0.2.0",
-  "publisher": "wilhelmer",
+  "version": "0.3.0",
+  "publisher": "LWilhelmer",
   "author": "Lars Wilhelmer",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -120,6 +120,11 @@
           "type": "boolean",
           "default": true,
           "description": "Follow mode: when enabled, switching editor tabs loads the newly active file's URL in the open split preview."
+        },
+        "localPreview.followHeadings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Follow Markdown headings: when enabled, moving the cursor onto a Markdown heading scrolls the open split preview to that heading's anchor (file.html#my-heading)."
         },
         "localPreview.previewWidth": {
           "type": "number",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- New setting `localPreview.followHeadings` (default on): moving the cursor onto a Markdown heading scrolls the split preview to that heading's anchor.
+- Anchor-only changes no longer reload the preview.
+- Refocusing the same file no longer reloads the preview and drops the `#anchor`.
+
 ## 0.2.0
 
 - The dev server now stops when you close the split pane.
