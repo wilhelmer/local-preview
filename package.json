@@ -1,8 +1,8 @@
 {
   "name": "local-preview",
   "displayName": "Local Preview",
-  "description": "Preview your static site locally, right within VS Code. Run a static site generator like Docusaurus, Hugo, or Jekyll under the hood and see the generated page in a live split pane while you browse and edit the source.",
-  "version": "0.5.0",
+  "description": "Preview your static site locally, right within VS Code.",
+  "version": "0.5.1",
   "publisher": "LWilhelmer",
   "author": "Lars Wilhelmer",
   "license": "MIT",

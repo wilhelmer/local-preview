@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- Updated documentation.
+
 ## 0.5.0
 
 - New command `Local Preview: Stop Server` to manually stop the server the extension started.
