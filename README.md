@@ -1,13 +1,14 @@
 # Local Preview
 
-Preview your static site locally, right within VS Code ✨
+✨ Preview your static site locally, right within VS Code. ✨
 
 Run a static site generator like Docusaurus, Hugo, or Jekyll under the hood and see the
 generated page in a live split pane while you browse and edit the source.
 
 ## Features
 
-- Maps files in your workspace to local server URLs. For example, `docs/page.md` to `http://localhost:8888/page.html`.
+- Maps files in your workspace to local server URLs. For example, `docs/page.md` to
+  `http://localhost:3000/docs/page.html`.
 - Opens it in a live split pane next to your editor, or in your external browser.
 - Follow mode: switching editor tabs loads the active file in the open preview.
 - Follow headings: moving the cursor onto a Markdown heading scrolls the preview to that heading.
@@ -24,20 +25,35 @@ Both open commands are also available in the editor title bar.
 
 ## Setup
 
-1. If you want the extension to start your server automatically, set
-   `localPreview.server.command` and `localPreview.server.port`. The extension starts the
-   server whenever a preview opens and nothing listens on that port.
-2. Run `Local Preview: Add Mapping` and enter a regex pattern and a URL. Or add
-   `localPreview.mappings` to `settings.json` (see below).
-3. Open a file and press `Ctrl+Alt+L`.
+1. Open the VS Code settings and search for `localpreview`.
+2. To start your server automatically, set **Server: Command** and **Server: Port**. The
+   extension starts the server whenever a preview opens and nothing listens on that port.
+3. In **Mappings**, add at least one mapping for your files. See below for an example.
+4. Open any file that matches your mapping and click the **Open in Split Pane** button in
+   the editor title bar.
 
-## Configuration
+### Example
+
+Let's assume you are using [Docusaurus](https://docusaurus.io/). The command to start the
+local dev server is `yarn start`. Docusaurus also has a `--no-open` flag to prevent it from
+automatically opening the browser, which is useful when using this extension.
+
+So your server command is `yarn start --no-open`, which serves your site at
+`http://localhost:3000`.
+
+Your Markdown files are in the `docs` folder. Configure the extension as shown below:
 
 ```json
-"localPreview.mappings": [
-  { "pattern": "^docs/(.*)\\.md$", "url": "http://localhost:8888/$1.html" }
-]
+{
+  "localPreview.server.command": "yarn start --no-open",
+  "localPreview.server.port": 3000,
+  "localPreview.mappings": [
+    { "pattern": "^docs/(.*)\\.md$", "url": "http://localhost:3000/docs/$1.html" }
+  ]
+}
 ```
+
+## Configuration
 
 | Setting                               | Default | Description                                                                                                                                                                                      |
 | ------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
