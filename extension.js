@@ -91,6 +91,14 @@ async function startServer() {
   if (!command || !Number.isInteger(port) || port < 1 || port > 65535) return;
   if (await portInUse(port)) return;
   const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+  if (!cfg.get('server.runInBackground', false)) {
+    // shortcut: the terminal is not tracked, so closing the preview does not stop this server
+    const term = vscode.window.activeTerminal || vscode.window.createTerminal({ cwd: folder && folder.uri.fsPath });
+    term.show(true);
+    term.sendText(command);
+    for (let i = 0; i < 60 && !(await portInUse(port)); i++) await new Promise(r => setTimeout(r, 500));
+    return;
+  }
   // runs headless: no terminal, output discarded
   serverProc = spawn(command, { cwd: folder && folder.uri.fsPath, shell: true, stdio: 'ignore', detached: process.platform !== 'win32' });
   serverProc.on('error', () => { serverProc = null; });
@@ -293,10 +301,10 @@ async function promptAddMapping() {
 
 async function warnNoMapping() {
   const choice = await vscode.window.showWarningMessage(
-    'No preview rule matches this file.',
-    'Add rule...'
+    'No preview mapping matches this file.',
+    'Add mapping...'
   );
-  if (choice === 'Add rule...') {
+  if (choice === 'Add mapping...') {
     await promptAddMapping();
   }
 }
@@ -325,7 +333,15 @@ function activate(context) {
   };
   context.subscriptions.push(
     vscode.commands.registerCommand('localPreview.open', openActiveFile(openUrl)),
-    vscode.commands.registerCommand('localPreview.openSplit', openActiveFile(openSplit))
+    vscode.commands.registerCommand('localPreview.openSplit', openActiveFile(openSplit)),
+    vscode.commands.registerCommand('localPreview.stopServer', () => {
+      if (!vscode.workspace.getConfiguration('localPreview').get('server.runInBackground', false)) {
+        vscode.window.showErrorMessage("This command is only available if 'Run in background' is enabled (localPreview.server.runInBackground).");
+        return;
+      }
+      vscode.window.showInformationMessage(serverProc ? 'Server stopped.' : 'No server is running.');
+      stopServer();
+    })
   );
 }
 

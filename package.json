@@ -2,7 +2,7 @@
   "name": "local-preview",
   "displayName": "Local Preview",
   "description": "Preview your static site locally, right within VS Code. Run a static site generator like Docusaurus, Hugo, or Jekyll under the hood and see the generated page in a live split pane while you browse and edit the source.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "LWilhelmer",
   "author": "Lars Wilhelmer",
   "license": "MIT",
@@ -56,6 +56,10 @@
         "command": "localPreview.addMapping",
         "title": "Local Preview: Add Mapping",
         "icon": "$(add)"
+      },
+      {
+        "command": "localPreview.stopServer",
+        "title": "Local Preview: Stop Server"
       }
     ],
     "keybindings": [
@@ -95,12 +99,17 @@
         "localPreview.server.command": {
           "type": "string",
           "default": "",
-          "description": "Command that starts your server (e.g. \"yarn run start\"). Runs in the background when a new preview opens and server.port is not in use. Stops when the split preview closes. Ignored in untrusted workspaces."
+          "description": "Command that starts your server, e.g., \"yarn run start\"). Runs when a new preview opens and the server port is not in use. Ignored in untrusted workspaces."
         },
         "localPreview.server.port": {
           "type": "number",
           "default": 0,
-          "description": "Port the server listens on. If nothing listens there when a preview opens, server.command is run. 0 disables."
+          "description": "Port the server listens on. If nothing listens there when a preview opens, the server command is run. 0 disables."
+        },
+        "localPreview.server.runInBackground": {
+          "type": "boolean",
+          "default": false,
+          "description": "When enabled, runs the server headless in the background and stops it when the split preview closes. When disabled, runs permanently in the terminal."
         },
         "localPreview.followMode": {
           "type": "boolean",

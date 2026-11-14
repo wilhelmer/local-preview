@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+- New command `Local Preview: Stop Server` to manually stop the server the extension started.
+- New setting `localPreview.server.runInBackground` (default off). When off, the server runs in the
+  active terminal and is not stopped automatically. When on, it runs headless and stops with the preview.
+
 ## 0.4.0
 
 - Renamed `Add Document Root` to `Add Mapping` and the `localPreview.roots` setting to
@@ -16,7 +22,7 @@
 ## 0.2.0
 
 - The server now stops when you close the split pane.
-- Fixed rules that matched only part of a path and gave a broken URL.
+- Fixed patterns that matched only part of a path and gave a broken URL.
 - The split preview now keeps one tab after you click a link inside it, instead of opening a second tab.
 - Fixed double server starts and duplicate preview tabs on fast repeated actions.
 - `Local Preview: Add Document Root` now saves to the workspace settings when the workspace defines `roots`.
