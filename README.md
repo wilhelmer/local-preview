@@ -1,19 +1,19 @@
 # Local Preview
 
-✨ Preview your static site locally, right within VS Code. ✨
+✨ Preview your site locally, right within VS Code. ✨
 
-Run a static site generator like Docusaurus, Hugo, or Jekyll under the hood and see the
-generated page in a live split pane while you browse and edit the source.
+Run a webserver under the hood and see the generated page in a live split pane while you
+browse and edit the source. Especially useful for Markdown-based documentation sites.
 
 ## Features
 
 - Maps files in your workspace to local server URLs. For example, `docs/page.md` to
   `http://localhost:3000/docs/page.html`.
 - Opens it in a live split pane next to your editor, or in your external browser.
+- Starts your server automatically when a preview opens, in a terminal or in the background.
 - Follow mode: switching editor tabs loads the active file in the open preview.
 - Follow headings: moving the cursor onto a Markdown heading scrolls the preview to that heading.
-- Optional (macOS + Chrome only): follow mode and follow headings also work in your external browser by navigating Chrome's front tab.
-- Optionally starts your server automatically when a preview opens, in a terminal or in the background.
+- (macOS + Chrome only:) Use follow mode in your external browser.
 
 | Command                             | Shortcut     |
 | ----------------------------------- | ------------ |
@@ -35,14 +35,14 @@ Both open commands are also available in the editor title bar.
 
 ### Example
 
-Let's assume you are using [Docusaurus](https://docusaurus.io/). The command to start the
-local dev server is `yarn start`. Docusaurus also has a `--no-open` flag to prevent it from
-automatically opening the browser, which is useful when using this extension.
+Let's assume you are running a Markdown-based documentation site using
+[Docusaurus](https://docusaurus.io/). The command to start the local dev server without
+opening a browser is `yarn start --no-open`.
 
-So your server command is `yarn start --no-open`, which serves your site at
-`http://localhost:3000`.
+This serves your site at `http://localhost:3000`.
 
-Your Markdown files are in the `docs` folder. Configure the extension as shown below:
+Also, let's assume your Markdown files are in the `docs` folder. Configure the extension
+as shown below:
 
 ```json
 {

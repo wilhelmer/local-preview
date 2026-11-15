@@ -1,8 +1,8 @@
 {
   "name": "local-preview",
   "displayName": "Local Preview",
-  "description": "Preview your static site locally, right within VS Code.",
-  "version": "0.6.0",
+  "description": "Preview your site locally, right within VS Code.",
+  "version": "0.6.1",
   "publisher": "LWilhelmer",
   "author": "Lars Wilhelmer",
   "license": "MIT",

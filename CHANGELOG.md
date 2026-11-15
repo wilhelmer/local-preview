@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- Updated documentation.
+
 ## 0.6.0
 
 - New setting `localPreview.followModeInExternalBrowser` (macOS + Chrome only). Follow mode and
