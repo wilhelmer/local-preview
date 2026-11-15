@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+
+- New setting `localPreview.followModeInExternalBrowser` (macOS + Chrome only). Follow mode and
+  follow headings now also work after `Open in Browser`, by navigating Chrome's front tab instead of
+  opening a new one.
+
 ## 0.5.1
 
 - Updated documentation.

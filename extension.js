@@ -2,7 +2,7 @@
 
 const vscode = require('vscode');
 const net = require('net');
-const { spawn } = require('child_process');
+const { spawn, execFile } = require('child_process');
 
 let serverProc = null;
 
@@ -31,9 +31,23 @@ function fileToUrl(fsPath) {
   return null;
 }
 
-async function openUrl(url) {
+// shortcut: macOS + Chrome only; it retargets Chrome's front tab, which may not be the preview if the user switched tabs there. Never detected as closed
+let externalUrl = null; // URL last opened in the external browser; followed like the split preview
+// resolves true if Chrome was running and its front tab was navigated
+function navigateChromeTab(url) {
+  if (process.platform !== 'darwin') return Promise.resolve(false);
+  const script = 'on run argv\nif application "Google Chrome" is not running then error "not running"\ntell application "Google Chrome" to set URL of active tab of front window to item 1 of argv\nend run';
+  return new Promise((resolve) => execFile('osascript', ['-e', script, url], (err) => resolve(!err)));
+}
+async function openUrl(url, follow) {
   if (!isSafeHttpUrl(url)) return;
   await ensureServer();
+  const wasOpen = externalUrl;
+  // only remembered when enabled, so followActive and the heading handler ignore the external browser otherwise
+  externalUrl = vscode.workspace.getConfiguration('localPreview').get('followModeInExternalBrowser', false) ? url : null;
+  lastFollowed = url.split('#')[0];
+  // follow navigations replace the tab; the first open and any failure fall back to the OS default
+  if (follow && wasOpen && await navigateChromeTab(url)) return;
   await vscode.env.openExternal(vscode.Uri.parse(url));
 }
 
@@ -128,6 +142,7 @@ let splitQueue = Promise.resolve();
 // runs one at a time so quick tab switches navigate the same tab instead of opening a second one
 let opening = 0; // tab events during an open must not look like a closed preview
 function openSplit(url) {
+  externalUrl = null; // the split takes over following
   lastFollowed = url.split('#')[0]; // set synchronously so rapid events do not queue duplicates
   opening++;
   splitQueue = splitQueue.then(() => doOpenSplit(url)).catch(() => {}).finally(() => { opening--; });
@@ -198,7 +213,7 @@ function originOf(url) {
 
 // loads the active tab's file in the preview; idempotent, so it is safe to call from any event
 function followActive() {
-  if (!lastSplitUrl) return;
+  if (!lastSplitUrl && !externalUrl) return;
   if (!vscode.workspace.getConfiguration('localPreview').get('followMode', true)) return;
   const g = vscode.window.tabGroups && vscode.window.tabGroups.activeTabGroup;
   const input = g && g.activeTab && g.activeTab.input;
@@ -208,7 +223,7 @@ function followActive() {
   if (ed) lastEditor = ed;
   const url = fileToUrl(input.uri.fsPath);
   // compare without the #anchor, else refocusing the same file navigates to the bare URL and loses the fragment
-  if (url && url !== lastFollowed) openSplit(url);
+  if (url && url !== lastFollowed) (lastSplitUrl ? openSplit : openUrl)(url, true);
 }
 
 function trackSave(context) {
@@ -234,7 +249,8 @@ function trackSave(context) {
   // moving the cursor onto a Markdown heading scrolls the preview to its anchor
   vscode.window.onDidChangeTextEditorSelection((e) => {
     const doc = e.textEditor.document;
-    if (!lastSplitUrl || opening || doc.languageId !== 'markdown' || doc.uri.scheme !== 'file') return;
+    const current = lastSplitUrl || externalUrl;
+    if (!current || opening || doc.languageId !== 'markdown' || doc.uri.scheme !== 'file') return;
     if (!vscode.workspace.getConfiguration('localPreview').get('followHeadings', true)) return;
     const m = /^ {0,3}#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(doc.lineAt(e.selections[0].active.line).text);
     if (!m) return;
@@ -242,9 +258,9 @@ function trackSave(context) {
     const slug = m[1].toLowerCase().replace(/[^\p{L}\p{N}_ -]/gu, '').replace(/ /g, '-');
     const base = fileToUrl(doc.uri.fsPath);
     // only scroll the file being previewed; other files are left to followMode
-    if (!slug || !base || base !== lastSplitUrl.split('#')[0]) return;
+    if (!slug || !base || base !== current.split('#')[0]) return;
     const url = `${base}#${encodeURIComponent(slug)}`;
-    if (url !== lastSplitUrl) openSplit(url);
+    if (url !== current) (lastSplitUrl ? openSplit : openUrl)(url, true);
   }, null, context.subscriptions);
 
   vscode.workspace.onDidSaveTextDocument((doc) => {
