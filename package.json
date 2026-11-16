@@ -2,7 +2,7 @@
   "name": "local-preview",
   "displayName": "Local Preview",
   "description": "Preview your site locally, right within VS Code.",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "publisher": "LWilhelmer",
   "author": "Lars Wilhelmer",
   "license": "MIT",
@@ -40,9 +40,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "localPreview.open",
-        "title": "Local Preview: Open in Browser",
-        "icon": "$(globe)"
+        "command": "localPreview.openWindow",
+        "title": "Local Preview: Open in Window",
+        "icon": {
+          "light": "media/window-globe-light.svg",
+          "dark": "media/window-globe-dark.svg"
+        }
       },
       {
         "command": "localPreview.openSplit",
@@ -69,7 +72,7 @@
         "when": "editorTextFocus"
       },
       {
-        "command": "localPreview.open",
+        "command": "localPreview.openWindow",
         "key": "ctrl+alt+o",
         "when": "editorTextFocus"
       }
@@ -82,7 +85,7 @@
           "when": "resourceSet"
         },
         {
-          "command": "localPreview.open",
+          "command": "localPreview.openWindow",
           "group": "navigation",
           "when": "resourceSet"
         }
@@ -134,12 +137,6 @@
           "minimum": 0,
           "maximum": 99,
           "description": "Width of the split preview in percent of the editor area when it opens. Applied only when two editor groups exist. 0 keeps VS Code's default split width."
-        },
-        "localPreview.followModeInExternalBrowser": {
-          "order": 7,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "**macOS + Chrome only.** When enabled, follow mode and follow headings also work in Chrome when using \"Open in Browser\"."
         }
       }
     }

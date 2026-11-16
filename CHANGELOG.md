@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.0
+
+- Replaced `Open in Browser` with `Open in Window`, which opens the preview in a separate floating window.
+- Removed external browser support, including `localPreview.followModeInExternalBrowser`.
+
 ## 0.6.2
 
 - Fixed an issue where the active editor scrolled when following headings.

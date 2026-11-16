@@ -9,16 +9,15 @@ browse and edit the source. Especially useful for Markdown-based documentation s
 
 - Maps files in your workspace to local server URLs. For example, `docs/page.md` to
   `http://localhost:3000/docs/page.html`.
-- Opens it in a live split pane next to your editor, or in your external browser.
+- Opens it in a live split pane next to your editor, or in a separate floating window.
 - Starts your server automatically when a preview opens, in a terminal or in the background.
 - Follow mode: switching editor tabs loads the active file in the open preview.
 - Follow headings: moving the cursor onto a Markdown heading scrolls the preview to that heading.
-- (macOS + Chrome only:) Use follow mode in your external browser.
 
 | Command                             | Shortcut     |
 | ----------------------------------- | ------------ |
 | `Local Preview: Open in Split Pane` | `Ctrl+Alt+L` |
-| `Local Preview: Open in Browser`    | `Ctrl+Alt+O` |
+| `Local Preview: Open in Window`     | `Ctrl+Alt+O` |
 | `Local Preview: Add Mapping`        | –            |
 | `Local Preview: Stop Server`        | –            |
 
@@ -30,8 +29,8 @@ Both open commands are also available in the editor title bar.
 2. To start your server automatically, set **Server: Command** and **Server: Port**. The
    extension starts the server whenever a preview opens and nothing listens on that port.
 3. In **Mappings**, add at least one mapping for your files. See below for an example.
-4. Open any file that matches your mapping and click the **Open in Split Pane** button in
-   the editor title bar.
+4. Open any file that matches your mapping and click the **Open in Split Pane** or **Open
+   in Window** button in the editor title bar.
 
 ### Example
 
@@ -65,7 +64,6 @@ as shown below:
 | `localPreview.server.command`              | –       | Command that starts your server, for example `yarn run start`. Ignored in untrusted workspaces.                                                                                                  |
 | `localPreview.server.port`                 | `0`     | Port your server listens on. The command runs only if nothing listens there. `0` disables.                                                                                                       |
 | `localPreview.server.runInBackground`      | `false` | If `false`, the server runs in the terminal and is not stopped automatically. If `true`, it runs headless and stops when the preview closes.                                                     |
-| `localPreview.followModeInExternalBrowser` | `false` | **macOS + Chrome only.** When enabled, follow mode and follow headings also work in Chrome when using "Open in Browser". Needs Automation permission for VS Code to control Chrome.              |
 
 ## Acknowledgements
 
