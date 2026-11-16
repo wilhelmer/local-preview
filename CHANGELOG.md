@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2
+
+- Fixed an issue where the active editor scrolled when following headings.
+- Fixed an issue where an empty editor group was created when the preview was already open in a detached window.
+
 ## 0.6.1
 
 - Updated documentation.

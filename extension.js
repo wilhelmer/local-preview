@@ -171,7 +171,8 @@ async function doOpenSplit(url) {
     if (isNew || url !== prevUrl) {
       await vscode.commands.executeCommand('workbench.action.browser.open', {
         url,
-        openToSide: true,
+        // with a preview tab already open (maybe in a detached window) openToSide would create an empty group before reusing it
+        openToSide: isNew || !isBrowserPreviewOpen(),
         reuseUrlFilter: originOf(prevUrl)
       });
     }
@@ -189,7 +190,7 @@ async function doOpenSplit(url) {
       if (g.activeTab && g.activeTab.input instanceof vscode.TabInputText) return;
       // a newer open is queued: it will restore focus itself
       if (opening > 1) return;
-      return vscode.window.showTextDocument(e.document, { viewColumn: e.viewColumn, preserveFocus: false, selection: e.selection });
+      return vscode.window.showTextDocument(e.document, { viewColumn: e.viewColumn, preserveFocus: false });
     };
     if (lastEditor && !lastEditor.document.isClosed) {
       // shortcut: the open command has no preserveFocus, so take focus back twice (now, and once after late grabs); no ongoing watch
