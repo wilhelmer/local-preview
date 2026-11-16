@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+
+- Fixed an issue where typing in a Markdown heading triggered follow headings.
+
 ## 0.7.0
 
 - Replaced `Open in Browser` with `Open in Window`, which opens the preview in a separate floating window.

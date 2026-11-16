@@ -2,7 +2,7 @@
   "name": "local-preview",
   "displayName": "Local Preview",
   "description": "Preview your site locally, right within VS Code.",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "publisher": "LWilhelmer",
   "author": "Lars Wilhelmer",
   "license": "MIT",
@@ -116,19 +116,19 @@
           "order": 3,
           "type": "boolean",
           "default": true,
-          "description": "When enabled, switching editor tabs opens the newly active file in the open split preview."
+          "description": "When enabled, preview follows the active file in the editor."
         },
         "localPreview.followHeadings": {
           "order": 4,
           "type": "boolean",
           "default": true,
-          "description": "When enabled, moving the cursor onto a Markdown heading scrolls the open split preview to that heading's anchor (file.html#my-heading)."
+          "description": "When enabled, moving the cursor onto a Markdown heading scrolls the open preview to that heading's anchor (file.html#my-heading)."
         },
         "localPreview.server.runInBackground": {
           "order": 5,
           "type": "boolean",
           "default": false,
-          "description": "When enabled, runs the server headless in the background and stops it when the split preview closes. When disabled, runs permanently in the terminal."
+          "description": "When enabled, runs the server headless in the background and stops it when the preview closes. When disabled, runs permanently in the terminal."
         },
         "localPreview.previewWidth": {
           "order": 6,

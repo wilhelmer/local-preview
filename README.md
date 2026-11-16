@@ -2,7 +2,7 @@
 
 ✨ Preview your site locally, right within VS Code. ✨
 
-Run a webserver under the hood and see the generated page in a live split pane while you
+Run a webserver under the hood and see the generated page in a live view while you
 browse and edit the source. Especially useful for Markdown-based documentation sites.
 
 ## Features
@@ -11,7 +11,7 @@ browse and edit the source. Especially useful for Markdown-based documentation s
   `http://localhost:3000/docs/page.html`.
 - Opens it in a live split pane next to your editor, or in a separate floating window.
 - Starts your server automatically when a preview opens, in a terminal or in the background.
-- Follow mode: switching editor tabs loads the active file in the open preview.
+- Follow mode: the preview shows whichever file you switch to.
 - Follow headings: moving the cursor onto a Markdown heading scrolls the preview to that heading.
 
 | Command                             | Shortcut     |
@@ -55,15 +55,15 @@ as shown below:
 
 ## Configuration
 
-| Setting                                    | Default | Description                                                                                                                                                                                      |
-| ------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `localPreview.mappings`                    | `[]`    | List of `{ pattern, url }`. `pattern` is a regex tested against the workspace-relative path, then the absolute path (forward slashes). First match wins. `url` can use capture groups like `$1`. |
-| `localPreview.followMode`                  | `true`  | Load the active file in the open split preview when switching tabs.                                                                                                                              |
-| `localPreview.followHeadings`              | `true`  | When the cursor is on a Markdown heading, scroll the open split preview to its anchor (`file.html#my-heading`).                                                                                  |
-| `localPreview.previewWidth`                | `30`    | Split preview width in % of the editor area. `0` keeps VS Code's default split width.                                                                                                            |
-| `localPreview.server.command`              | –       | Command that starts your server, for example `yarn run start`. Ignored in untrusted workspaces.                                                                                                  |
-| `localPreview.server.port`                 | `0`     | Port your server listens on. The command runs only if nothing listens there. `0` disables.                                                                                                       |
-| `localPreview.server.runInBackground`      | `false` | If `false`, the server runs in the terminal and is not stopped automatically. If `true`, it runs headless and stops when the preview closes.                                                     |
+| Setting                               | Default | Description                                                                                                                                                                                      |
+| ------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `localPreview.mappings`               | `[]`    | List of `{ pattern, url }`. `pattern` is a regex tested against the workspace-relative path, then the absolute path (forward slashes). First match wins. `url` can use capture groups like `$1`. |
+| `localPreview.followMode`             | `true`  | Preview the active file when you switch files.                                                                                                                                                   |
+| `localPreview.followHeadings`         | `true`  | When the cursor is on a Markdown heading, scroll the open split preview to its anchor (`file.html#my-heading`).                                                                                  |
+| `localPreview.previewWidth`           | `30`    | Split preview width in % of the editor area. `0` keeps VS Code's default split width.                                                                                                            |
+| `localPreview.server.command`         | –       | Command that starts your server, for example `yarn run start`. Ignored in untrusted workspaces.                                                                                                  |
+| `localPreview.server.port`            | `0`     | Port your server listens on. The command runs only if nothing listens there. `0` disables.                                                                                                       |
+| `localPreview.server.runInBackground` | `false` | If `false`, the server runs in the terminal and is not stopped automatically. If `true`, it runs headless and stops when the preview closes.                                                     |
 
 ## Acknowledgements
 

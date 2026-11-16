@@ -207,6 +207,8 @@ function followActive() {
   if (url && url !== lastFollowed) openSplit(url);
 }
 
+const lastSelVersion = new WeakMap(); // doc -> version at its previous selection event
+
 function trackSave(context) {
   if (vscode.window.tabGroups && vscode.window.tabGroups.onDidChangeTabs) {
     vscode.window.tabGroups.onDidChangeTabs(() => {
@@ -231,6 +233,10 @@ function trackSave(context) {
   vscode.window.onDidChangeTextEditorSelection((e) => {
     const doc = e.textEditor.document;
     const current = lastSplitUrl;
+    // an edit moves the cursor too: follow only pure navigation (arrows, click), never typing
+    const edited = doc.version !== lastSelVersion.get(doc);
+    lastSelVersion.set(doc, doc.version);
+    if (edited || (e.kind !== vscode.TextEditorSelectionChangeKind.Keyboard && e.kind !== vscode.TextEditorSelectionChangeKind.Mouse)) return;
     if (!current || opening || doc.languageId !== 'markdown' || doc.uri.scheme !== 'file') return;
     if (!vscode.workspace.getConfiguration('localPreview').get('followHeadings', true)) return;
     const m = /^ {0,3}#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(doc.lineAt(e.selections[0].active.line).text);
