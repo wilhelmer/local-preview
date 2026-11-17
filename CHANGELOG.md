@@ -2,9 +2,12 @@
 
 ## 0.8.0
 
-- Renamed **Follow mode** to **Follow files** and **Follow headings** to **Follow Markdown content**.
-- Follow Markdown content: when the cursor is not on a heading, the preview now scrolls to
-  the closest heading above it.
+- Replaced the **Follow Files** and **Follow Markdown Content** settings with a single
+  **Follow Mode** setting (`localPreview.followMode`). Previous follow settings are no
+  longer read.
+- New follow mode: **Follow files, Markdown headings, and content**. In this mode, preview
+  scrolls to the closest heading above your cursor, so the preview tracks where you are in
+  the text.
 
 ## 0.7.1
 

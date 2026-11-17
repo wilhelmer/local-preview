@@ -112,23 +112,19 @@
           "default": [],
           "description": "Mappings of { pattern, url }. Pattern is a regex tested against the workspace-relative path, then the absolute path, first match wins. Url may use capture groups like $1."
         },
-        "localPreview.followFiles": {
+        "localPreview.followMode": {
           "order": 3,
-          "type": "boolean",
-          "default": true,
-          "description": "Follow files: when enabled, preview follows the active file in the editor."
-        },
-        "localPreview.followMarkdownContent": {
-          "order": 4,
-          "type": "boolean",
-          "default": true,
-          "description": "Follow Markdown content: when enabled, preview follows the cursor in Markdown files and scrolls the page."
+          "type": "string",
+          "default": "content",
+          "enum": ["off", "files", "headings", "content"],
+          "enumItemLabels": ["Off", "Follow files", "Follow files and Markdown headings", "Follow files, Markdown headings, and content"],
+          "description": "What the preview follows: nothing (off), the active file, plus Markdown headings (when the cursor is on one), or plus any Markdown content."
         },
         "localPreview.server.runInBackground": {
           "order": 5,
           "type": "boolean",
           "default": false,
-          "description": "When enabled, runs the server headless in the background and stops it when the preview closes. When disabled, runs permanently in the terminal."
+          "description": "Runs the server in the background and stops it when the preview closes. When disabled, runs in the terminal, without auto-stop."
         },
         "localPreview.previewWidth": {
           "order": 6,

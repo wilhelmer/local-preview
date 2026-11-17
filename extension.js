@@ -195,7 +195,8 @@ function originOf(url) {
 }
 
 // preview URL for a Markdown file: anchored to the closest heading at or above the line, bare if there is none
-function markdownUrl(doc, line) {
+// exact: only a heading on the line itself counts (no closest-heading search)
+function markdownUrl(doc, line, exact) {
   const base = fileToUrl(doc.uri.fsPath);
   if (!base) return base;
   // forward scan so "#" lines inside code fences are skipped
@@ -205,26 +206,30 @@ function markdownUrl(doc, line) {
     if (/^ {0,3}(```|~~~)/.test(text)) { fence = !fence; continue; }
     if (fence) continue;
     m = /^ {0,3}#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(text) || m;
+    if (exact && i < line) m = null; // a heading above the cursor does not count
   }
   // shortcut: GitHub-style slug (no duplicate-heading "-1" suffixes); adjust if your renderer slugs differently
   const slug = m && m[1].toLowerCase().replace(/[^\p{L}\p{N}_ -]/gu, '').replace(/ /g, '-');
   return slug ? `${base}#${encodeURIComponent(slug)}` : base;
 }
 
+function followMode() {
+  return vscode.workspace.getConfiguration('localPreview').get('followMode', 'content');
+}
+
 // loads the active tab's file in the preview; idempotent, so it is safe to call from any event
 function followActive() {
   if (!lastSplitUrl) return;
-  const cfg = vscode.workspace.getConfiguration('localPreview');
   const g = vscode.window.tabGroups && vscode.window.tabGroups.activeTabGroup;
   const input = g && g.activeTab && g.activeTab.input;
   // a focused preview or other non-text tab has no file: keep what is shown
   if (!(input instanceof vscode.TabInputText) || input.uri.scheme !== 'file') return;
   const ed = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === input.uri.toString());
   if (ed) lastEditor = ed;
-  // Markdown content following supersedes file following for Markdown files (it also opens them without an anchor)
-  const md = ed && ed.document.languageId === 'markdown' && cfg.get('followMarkdownContent', true);
-  if (!md && !cfg.get('followFiles', true)) return;
-  const url = md ? markdownUrl(ed.document, ed.selection.active.line) : fileToUrl(input.uri.fsPath);
+  const mode = followMode();
+  if (mode === 'off') return;
+  const md = ed && ed.document.languageId === 'markdown' && mode !== 'files';
+  const url = md ? markdownUrl(ed.document, ed.selection.active.line, mode === 'headings') : fileToUrl(input.uri.fsPath);
   // compare without the #anchor, else refocusing the same file navigates to the bare URL and loses the fragment
   if (url && url.split('#')[0] !== lastFollowed) openSplit(url);
 }
@@ -261,11 +266,14 @@ function trackSave(context) {
     lastSelVersion.set(doc, doc.version);
     if (edited || (e.kind !== vscode.TextEditorSelectionChangeKind.Keyboard && e.kind !== vscode.TextEditorSelectionChangeKind.Mouse)) return;
     if (!current || opening || doc.languageId !== 'markdown' || doc.uri.scheme !== 'file') return;
-    if (!vscode.workspace.getConfiguration('localPreview').get('followMarkdownContent', true)) return;
+    const mode = followMode();
+    if (mode === 'off' || mode === 'files') return;
     const base = fileToUrl(doc.uri.fsPath);
     // only scroll the file being previewed; other files are handled by followActive
     if (!base || base !== current.split('#')[0]) return;
-    const url = markdownUrl(doc, e.selections[0].active.line);
+    const url = markdownUrl(doc, e.selections[0].active.line, mode === 'headings');
+    // headings only: leave the preview where it is when the cursor is not on a heading
+    if (mode === 'headings' && !url.includes('#')) return;
     // no heading above: an empty anchor scrolls to the top without a reload ("base" and "base#" are the same position)
     const target = url.includes('#') ? url : `${url}#`;
     clearTimeout(selTimer);
