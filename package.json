@@ -122,7 +122,7 @@
           "order": 4,
           "type": "boolean",
           "default": true,
-          "description": "Follow Markdown content: when enabled, moving the cursor in a Markdown file scrolls the open preview to the closest heading at or above it (file.html#my-heading)."
+          "description": "Follow Markdown content: when enabled, preview follows the cursor in Markdown files and scrolls the page."
         },
         "localPreview.server.runInBackground": {
           "order": 5,
