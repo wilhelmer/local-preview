@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+
+- Renamed **Follow mode** to **Follow files** and **Follow headings** to **Follow Markdown content**.
+- Follow Markdown content: when the cursor is not on a heading, the preview now scrolls to
+  the closest heading above it.
+
 ## 0.7.1
 
 - Fixed an issue where typing in a Markdown heading triggered follow headings.

@@ -121,10 +121,12 @@ async function applyPreviewWidth() {
 let splitQueue = Promise.resolve();
 // runs one at a time so quick tab switches navigate the same tab instead of opening a second one
 let opening = 0; // tab events during an open must not look like a closed preview
-function openSplit(url, inWindow) {
+// keepEditorFocus: the open came from the editor itself (cursor, save), so give it focus back; tab/file follows may come from
+// a search view or quick pick, whose focus VS Code cannot report or restore, so those are left alone
+function openSplit(url, inWindow, keepEditorFocus) {
   lastFollowed = url.split('#')[0]; // set synchronously so rapid events do not queue duplicates
   opening++;
-  splitQueue = splitQueue.then(() => doOpenSplit(url, inWindow)).catch(() => {}).finally(() => { opening--; });
+  splitQueue = splitQueue.then(() => doOpenSplit(url, inWindow, keepEditorFocus)).catch(() => {}).finally(() => { opening--; });
   return splitQueue;
 }
 
@@ -135,7 +137,7 @@ function previewClosed() {
   stopServer();
 }
 
-async function doOpenSplit(url, inWindow) {
+async function doOpenSplit(url, inWindow, keepEditorFocus) {
   if (!isSafeHttpUrl(url)) return;
   const isNew = !lastSplitUrl; // no preview open yet
   if (isNew) await ensureServer();
@@ -172,7 +174,7 @@ async function doOpenSplit(url, inWindow) {
       return vscode.window.showTextDocument(e.document, { viewColumn: e.viewColumn, preserveFocus: false });
     };
     // refocusing the main window would push the new floating window to the background
-    if (!inWindow && lastEditor && !lastEditor.document.isClosed) {
+    if (keepEditorFocus && !inWindow && lastEditor && !lastEditor.document.isClosed) {
       // shortcut: the open command has no preserveFocus, so take focus back twice (now, and once after late grabs); no ongoing watch
       await refocus();
       setTimeout(() => { if (lastEditor && !lastEditor.document.isClosed) refocus().then(undefined, () => {}); }, 300);
@@ -192,21 +194,42 @@ function originOf(url) {
   try { return `${new URL(url).origin}/**`; } catch { return url; }
 }
 
+// preview URL for a Markdown file: anchored to the closest heading at or above the line, bare if there is none
+function markdownUrl(doc, line) {
+  const base = fileToUrl(doc.uri.fsPath);
+  if (!base) return base;
+  // forward scan so "#" lines inside code fences are skipped
+  let m = null, fence = false;
+  for (let i = 0; i <= line; i++) {
+    const text = doc.lineAt(i).text;
+    if (/^ {0,3}(```|~~~)/.test(text)) { fence = !fence; continue; }
+    if (fence) continue;
+    m = /^ {0,3}#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(text) || m;
+  }
+  // shortcut: GitHub-style slug (no duplicate-heading "-1" suffixes); adjust if your renderer slugs differently
+  const slug = m && m[1].toLowerCase().replace(/[^\p{L}\p{N}_ -]/gu, '').replace(/ /g, '-');
+  return slug ? `${base}#${encodeURIComponent(slug)}` : base;
+}
+
 // loads the active tab's file in the preview; idempotent, so it is safe to call from any event
 function followActive() {
   if (!lastSplitUrl) return;
-  if (!vscode.workspace.getConfiguration('localPreview').get('followMode', true)) return;
+  const cfg = vscode.workspace.getConfiguration('localPreview');
   const g = vscode.window.tabGroups && vscode.window.tabGroups.activeTabGroup;
   const input = g && g.activeTab && g.activeTab.input;
   // a focused preview or other non-text tab has no file: keep what is shown
   if (!(input instanceof vscode.TabInputText) || input.uri.scheme !== 'file') return;
   const ed = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === input.uri.toString());
   if (ed) lastEditor = ed;
-  const url = fileToUrl(input.uri.fsPath);
+  // Markdown content following supersedes file following for Markdown files (it also opens them without an anchor)
+  const md = ed && ed.document.languageId === 'markdown' && cfg.get('followMarkdownContent', true);
+  if (!md && !cfg.get('followFiles', true)) return;
+  const url = md ? markdownUrl(ed.document, ed.selection.active.line) : fileToUrl(input.uri.fsPath);
   // compare without the #anchor, else refocusing the same file navigates to the bare URL and loses the fragment
-  if (url && url !== lastFollowed) openSplit(url);
+  if (url && url.split('#')[0] !== lastFollowed) openSplit(url);
 }
 
+let selTimer;
 const lastSelVersion = new WeakMap(); // doc -> version at its previous selection event
 
 function trackSave(context) {
@@ -238,16 +261,18 @@ function trackSave(context) {
     lastSelVersion.set(doc, doc.version);
     if (edited || (e.kind !== vscode.TextEditorSelectionChangeKind.Keyboard && e.kind !== vscode.TextEditorSelectionChangeKind.Mouse)) return;
     if (!current || opening || doc.languageId !== 'markdown' || doc.uri.scheme !== 'file') return;
-    if (!vscode.workspace.getConfiguration('localPreview').get('followHeadings', true)) return;
-    const m = /^ {0,3}#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(doc.lineAt(e.selections[0].active.line).text);
-    if (!m) return;
-    // shortcut: GitHub-style slug (no duplicate-heading "-1" suffixes); adjust if your renderer slugs differently
-    const slug = m[1].toLowerCase().replace(/[^\p{L}\p{N}_ -]/gu, '').replace(/ /g, '-');
+    if (!vscode.workspace.getConfiguration('localPreview').get('followMarkdownContent', true)) return;
     const base = fileToUrl(doc.uri.fsPath);
-    // only scroll the file being previewed; other files are left to followMode
-    if (!slug || !base || base !== current.split('#')[0]) return;
-    const url = `${base}#${encodeURIComponent(slug)}`;
-    if (url !== current) openSplit(url);
+    // only scroll the file being previewed; other files are handled by followActive
+    if (!base || base !== current.split('#')[0]) return;
+    const url = markdownUrl(doc, e.selections[0].active.line);
+    // no heading above: an empty anchor scrolls to the top without a reload ("base" and "base#" are the same position)
+    const target = url.includes('#') ? url : `${url}#`;
+    clearTimeout(selTimer);
+    // VS Code has no key-up event: a held arrow key repeats every ~30 ms, so act once the cursor has rested for a moment
+    if (target.replace(/#$/, '') !== current.replace(/#$/, '')) {
+      selTimer = setTimeout(() => { if (!opening && lastSplitUrl === current) openSplit(target, false, true); }, 200);
+    }
   }, null, context.subscriptions);
 
   vscode.workspace.onDidSaveTextDocument((doc) => {
@@ -260,7 +285,7 @@ function trackSave(context) {
       return;
     }
     // saving any mapped file reloads every open preview
-    openSplit(lastSplitUrl);
+    openSplit(lastSplitUrl, false, true);
   }, null, context.subscriptions);
 }
 
