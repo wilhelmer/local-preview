@@ -2,7 +2,7 @@
   "name": "local-preview",
   "displayName": "Local Preview",
   "description": "Preview your site locally, right within VS Code.",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "publisher": "LWilhelmer",
   "author": "Lars Wilhelmer",
   "license": "MIT",
@@ -98,7 +98,7 @@
           "order": 0,
           "type": "string",
           "default": "",
-          "description": "Command that starts your server, e.g., \"yarn run start\"). Runs when a new preview opens and the server port is not in use. Ignored in untrusted workspaces."
+          "description": "Command that starts your server, e.g., \"yarn run start\". Runs when a new preview opens and the server port is not in use. Ignored in untrusted workspaces."
         },
         "localPreview.server.port": {
           "order": 1,

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.2
+
+- When the server command fails, the preview now shows an error and does not open, instead
+  of waiting 30 seconds and opening anyway. In the terminal, this needs shell integration.
+- When the server runs in the terminal, it now uses a terminal named `Local Preview`,
+  creating it if it does not exist, instead of the active terminal.
+
 ## 0.8.1
 
 - Markdown heading and content following now also works with MDX files.

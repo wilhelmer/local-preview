@@ -37,7 +37,7 @@ Both open commands are also available in the editor title bar.
 
 ### Example
 
-This example uses a [Docusaurus](https://docusaurus.io/) site. `yarn start --no-open`
+This example uses a [Docusaurus](https://docusaurus.io/) site. `npx docusaurus start --no-open`
 starts its dev server without opening a browser, and the server serves the site at
 `http://localhost:3000`. The Markdown files live in the `docs` folder.
 
@@ -45,7 +45,7 @@ Configure the extension like this:
 
 ```json
 {
-  "localPreview.server.command": "yarn start --no-open",
+  "localPreview.server.command": "npx docusaurus start --no-open",
   "localPreview.server.port": 3000,
   "localPreview.mappings": [
     { "pattern": "^docs/(.*)\\.mdx?$", "url": "http://localhost:3000/docs/$1.html" }

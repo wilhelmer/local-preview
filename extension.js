@@ -46,7 +46,6 @@ async function supportsIntegratedBrowser() {
 }
 
 function isBrowserPreviewOpen() {
-  if (!vscode.window.tabGroups || !vscode.window.tabGroups.all) return false;
   for (const group of vscode.window.tabGroups.all) {
     for (const tab of group.tabs) {
       if (tab.input instanceof vscode.TabInputWebview) {
@@ -78,34 +77,51 @@ function ensureServer() {
   return serverStarting || (serverStarting = startServer().finally(() => { serverStarting = null; }));
 }
 
+// resolves true once the port opens or the wait times out, false as soon as failed() says the server died
+async function waitForPort(port, failed) {
+  // shortcut: fixed 30s wait, then the preview opens anyway; make configurable if slow servers need more
+  for (let i = 0; i < 60; i++) {
+    if (await portInUse(port)) return true;
+    if (failed()) return false;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return true;
+}
+
+// resolves false when the server command failed, so the caller can skip opening the preview
 async function startServer() {
   const cfg = vscode.workspace.getConfiguration('localPreview');
   const command = (cfg.get('server.command', '') || '').trim();
   const port = cfg.get('server.port', 0);
-  if (!command || !Number.isInteger(port) || port < 1 || port > 65535) return;
-  if (await portInUse(port)) return;
+  if (!command || !Number.isInteger(port) || port < 1 || port > 65535) return true;
+  if (await portInUse(port)) return true;
   const folder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+  let ok;
   if (!cfg.get('server.runInBackground', false)) {
     // shortcut: the terminal is not tracked, so closing the preview does not stop this server
-    const term = vscode.window.activeTerminal || vscode.window.createTerminal({ cwd: folder && folder.uri.fsPath });
+    const term = vscode.window.terminals.find(t => t.name === 'Local Preview')
+      || vscode.window.createTerminal({ name: 'Local Preview', cwd: folder && folder.uri.fsPath });
     term.show(true);
+    // shortcut: a failing command is only detected with shell integration (VS Code 1.93+); otherwise the wait runs out
+    let failed = false;
+    const sub = vscode.window.onDidEndTerminalShellExecution
+      && vscode.window.onDidEndTerminalShellExecution(e => { if (e.terminal === term && e.exitCode) failed = true; });
     term.sendText(command);
-    for (let i = 0; i < 60 && !(await portInUse(port)); i++) await new Promise(r => setTimeout(r, 500));
-    return;
+    ok = await waitForPort(port, () => failed);
+    if (sub) sub.dispose();
+  } else {
+    // runs headless: no terminal, output discarded
+    serverProc = spawn(command, { cwd: folder && folder.uri.fsPath, shell: true, stdio: 'ignore', detached: process.platform !== 'win32' });
+    serverProc.on('error', () => { serverProc = null; });
+    serverProc.on('exit', () => { serverProc = null; });
+    // serverProc is nulled on exit, so a crashing command ends the wait early
+    ok = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: `Starting server on port ${port}...` },
+      () => waitForPort(port, () => !serverProc)
+    );
   }
-  // runs headless: no terminal, output discarded
-  serverProc = spawn(command, { cwd: folder && folder.uri.fsPath, shell: true, stdio: 'ignore', detached: process.platform !== 'win32' });
-  serverProc.on('error', () => { serverProc = null; });
-  serverProc.on('exit', () => { serverProc = null; });
-  // shortcut: fixed 30s wait, then the preview opens anyway; make configurable if slow servers need more
-  await vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Notification, title: `Starting server on port ${port}...` },
-    async () => {
-      for (let i = 0; i < 60 && !(await portInUse(port)); i++) {
-        await new Promise(r => setTimeout(r, 500));
-      }
-    }
-  );
+  if (!ok) vscode.window.showErrorMessage(`Server command failed: ${command}`);
+  return ok;
 }
 
 // sizes the new side group; only when exactly two groups exist so a custom layout is not clobbered
@@ -140,7 +156,10 @@ function previewClosed() {
 async function doOpenSplit(url, inWindow, keepEditorFocus) {
   if (!isSafeHttpUrl(url)) return;
   const isNew = !lastSplitUrl; // no preview open yet
-  if (isNew) await ensureServer();
+  if (isNew && !(await ensureServer())) {
+    lastFollowed = null; // openSplit set it before the failure; clear it so the next event retries
+    return;
+  }
   // with arrow keys the next open starts while the browser has focus, so activeTextEditor is undefined
   // lastEditor is kept current by the tab/editor events; activeTextEditor can lag behind them
   lastEditor = lastEditor || vscode.window.activeTextEditor;
@@ -225,8 +244,8 @@ function followMode() {
 // loads the active tab's file in the preview; idempotent, so it is safe to call from any event
 function followActive() {
   if (!lastSplitUrl) return;
-  const g = vscode.window.tabGroups && vscode.window.tabGroups.activeTabGroup;
-  const input = g && g.activeTab && g.activeTab.input;
+  const g = vscode.window.tabGroups.activeTabGroup;
+  const input = g.activeTab && g.activeTab.input;
   // a focused preview or other non-text tab has no file: keep what is shown
   if (!(input instanceof vscode.TabInputText) || input.uri.scheme !== 'file') return;
   const ed = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === input.uri.toString());
@@ -243,12 +262,10 @@ let selTimer;
 const lastSelVersion = new WeakMap(); // doc -> version at its previous selection event
 
 function trackSave(context) {
-  if (vscode.window.tabGroups && vscode.window.tabGroups.onDidChangeTabs) {
-    vscode.window.tabGroups.onDidChangeTabs(() => {
-      if (lastSplitUrl && !opening && !isBrowserPreviewOpen()) previewClosed();
-      else followActive();
-    }, null, context.subscriptions);
-  }
+  vscode.window.tabGroups.onDidChangeTabs(() => {
+    if (lastSplitUrl && !opening && !isBrowserPreviewOpen()) previewClosed();
+    else followActive();
+  }, null, context.subscriptions);
 
   // switching editor tabs loads that file's URL in the open preview
   vscode.window.onDidChangeActiveTextEditor((editor) => {
@@ -258,9 +275,7 @@ function trackSave(context) {
   // the editor event alone misses explorer/search/alt-tab switches, so resync from the active tab on every signal
   vscode.window.onDidChangeVisibleTextEditors(followActive, null, context.subscriptions);
   vscode.window.onDidChangeWindowState((s) => { if (s.focused) followActive(); }, null, context.subscriptions);
-  if (vscode.window.tabGroups) {
-    vscode.window.tabGroups.onDidChangeTabGroups(followActive, null, context.subscriptions);
-  }
+  vscode.window.tabGroups.onDidChangeTabGroups(followActive, null, context.subscriptions);
 
   // moving the cursor onto a Markdown heading scrolls the preview to its anchor
   vscode.window.onDidChangeTextEditorSelection((e) => {
