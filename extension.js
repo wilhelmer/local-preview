@@ -205,13 +205,18 @@ function markdownUrl(doc, line, exact) {
     const text = doc.lineAt(i).text;
     if (/^ {0,3}(```|~~~)/.test(text)) { fence = !fence; continue; }
     if (fence) continue;
-    m = /^ {0,3}#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(text) || m;
+    m = /^ {0,3}(#{1,6})[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(text) || m;
     if (exact && i < line) m = null; // a heading above the cursor does not count
   }
   // shortcut: GitHub-style slug (no duplicate-heading "-1" suffixes); adjust if your renderer slugs differently
-  const slug = m && m[1].toLowerCase().replace(/[^\p{L}\p{N}_ -]/gu, '').replace(/ /g, '-');
+  // an h1 is the page title: its empty anchor scrolls to the top
+  if (m && m[1].length === 1) return `${base}#`;
+  const slug = m && m[2].toLowerCase().replace(/[^\p{L}\p{N}_ -]/gu, '').replace(/ /g, '-');
   return slug ? `${base}#${encodeURIComponent(slug)}` : base;
 }
+
+// languageId 'mdx' only exists with an MDX extension installed, so fall back to the file extension
+const isMarkdown = (doc) => doc.languageId === 'markdown' || doc.languageId === 'mdx' || /\.mdx?$/i.test(doc.uri.fsPath);
 
 function followMode() {
   return vscode.workspace.getConfiguration('localPreview').get('followMode', 'content');
@@ -228,7 +233,7 @@ function followActive() {
   if (ed) lastEditor = ed;
   const mode = followMode();
   if (mode === 'off') return;
-  const md = ed && ed.document.languageId === 'markdown' && mode !== 'files';
+  const md = ed && isMarkdown(ed.document) && mode !== 'files';
   const url = md ? markdownUrl(ed.document, ed.selection.active.line, mode === 'headings') : fileToUrl(input.uri.fsPath);
   // compare without the #anchor, else refocusing the same file navigates to the bare URL and loses the fragment
   if (url && url.split('#')[0] !== lastFollowed) openSplit(url);
@@ -265,7 +270,7 @@ function trackSave(context) {
     const edited = doc.version !== lastSelVersion.get(doc);
     lastSelVersion.set(doc, doc.version);
     if (edited || (e.kind !== vscode.TextEditorSelectionChangeKind.Keyboard && e.kind !== vscode.TextEditorSelectionChangeKind.Mouse)) return;
-    if (!current || opening || doc.languageId !== 'markdown' || doc.uri.scheme !== 'file') return;
+    if (!current || opening || !isMarkdown(doc) || doc.uri.scheme !== 'file') return;
     const mode = followMode();
     if (mode === 'off' || mode === 'files') return;
     const base = fileToUrl(doc.uri.fsPath);

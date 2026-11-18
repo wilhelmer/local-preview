@@ -4,3 +4,4 @@
 .gitignore
 *.vsix
 assets/**
+media/demo.*

@@ -5,6 +5,8 @@
 Run a webserver under the hood and see the generated page in a live view while you
 browse and edit the source. Especially useful for Markdown-based documentation sites.
 
+![Demo of Local Preview](media/demo.gif)
+
 ## Features
 
 - Maps files in your workspace to local server URLs. For example, `docs/page.md` to
@@ -46,7 +48,7 @@ Configure the extension like this:
   "localPreview.server.command": "yarn start --no-open",
   "localPreview.server.port": 3000,
   "localPreview.mappings": [
-    { "pattern": "^docs/(.*)\\.md$", "url": "http://localhost:3000/docs/$1.html" }
+    { "pattern": "^docs/(.*)\\.mdx?$", "url": "http://localhost:3000/docs/$1.html" }
   ]
 }
 ```

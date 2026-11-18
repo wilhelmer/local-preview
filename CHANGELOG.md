@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1
+
+- Markdown heading and content following now also works with MDX files.
+- When the closest heading is an h1, the preview now scrolls to the top instead of to the
+  h1's anchor.
+
 ## 0.8.0
 
 - Replaced the **Follow Files** and **Follow Markdown Content** settings with a single
