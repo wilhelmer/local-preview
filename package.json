@@ -2,7 +2,7 @@
   "name": "local-preview",
   "displayName": "Local Preview",
   "description": "Preview your site locally, right within VS Code.",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "publisher": "LWilhelmer",
   "author": "Lars Wilhelmer",
   "license": "MIT",

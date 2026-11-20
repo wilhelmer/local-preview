@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.3
+
+- Updated the extension icon and the demo video.
+
 ## 0.8.2
 
 - When the server command fails, the preview now shows an error and does not open, instead
