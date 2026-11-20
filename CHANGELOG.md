@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.4
+
+- Updated the extension icon with some flower power.
+
 ## 0.8.3
 
 - Updated the extension icon and the demo video.
